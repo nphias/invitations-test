@@ -6,7 +6,7 @@ import { decode } from '@msgpack/msgpack';
 
 import { acceptInvite, clearInvite, getPendingInvites, InvitationEntryInfo, rejectInvite, sendInvitations } from './common.js';
 
-const path_to_happ = '/../workdir/happ/team-mates.happ'
+const path_to_happ = '/../workdir/happ/groups.happ'
 
 test('1. create and compare invitation lists', async () => {
   await runScenario(async scenario => {
