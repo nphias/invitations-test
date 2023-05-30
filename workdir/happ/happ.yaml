@@ -1,0 +1,17 @@
+---
+manifest_version: "1"
+name: groups
+description: "An app to demo invitations and profiles zomes"
+roles:
+  - name: connection
+    provisioning:
+      strategy: create
+      deferred: false
+    dna:
+      bundled: "../dna/group.dna"
+      modifiers:
+        network_seed: ~
+        properties: ~
+        origin_time: ~
+      version: ~
+      clone_limit: 0

@@ -1,0 +1,50 @@
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+
+# UI dependencies
+/ui/node_modules/
+/ui/dist/
+/ui/.angular
+/ui/a_temp_files/
+/ui/*.zip
+.ng-script.sh
+/temp_files/
+/oldui/
+
+
+# holochain
+.hc*
+/target/
+/.cargo/
+/zomes/target/
+/tests/node_modules
+/node_modules
+/workdir/dna/*.dna
+/workdir/happ/*.happ
+/workdir/*.webhapp
+
+# profiling files
+chrome-profiler-events*.json
+speed-measure-plugin*.json
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
