@@ -7,16 +7,16 @@ opt-level = "z"
 
 [workspace]
 resolver ="2"
-members = ["crates/rzomes/*", "crates/zomes/*"]
+members = ["crates/coordinator/*", "crates/integrity/*"]
 
 [workspace.dependencies]
-#holochain = "0.1.4"
+#holochain = "0.1.5"
 hdi = "=0.2"
 hdk = "=0.1"
 serde = "1"
 
 [workspace.dependencies.invitations_integrity]
-path = "crates/zomes/invitations"
+path = "crates/integrity/invitations"
 
 [workspace.dependencies.profiles_integrity]
-path = "crates/zomes/profiles"
+path = "crates/integrity/profiles"

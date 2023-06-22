@@ -662,19 +662,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "hc_rzome_invitations"
+name = "hc_coordinator_zome_invitations"
 version = "0.0.1"
-source = "git+https://github.com/holochain-open-dev/invitations.git?branch=crates-only#e479ae04f6bf110e12277db017c186d571d9231d"
+source = "git+https://github.com/holochain-open-dev/invitations.git?branch=crates-only#536d4edc3f7677337773a800ea0cda6e8d9d2ca6"
 dependencies = [
- "hc_zome_invitations",
+ "hc_integrity_zome_invitations",
  "hdk",
  "serde",
 ]
 
 [[package]]
-name = "hc_zome_invitations"
+name = "hc_integrity_zome_invitations"
 version = "0.0.1"
-source = "git+https://github.com/holochain-open-dev/invitations.git?branch=crates-only#e479ae04f6bf110e12277db017c186d571d9231d"
+source = "git+https://github.com/holochain-open-dev/invitations.git?branch=crates-only#536d4edc3f7677337773a800ea0cda6e8d9d2ca6"
 dependencies = [
  "hdi",
  "serde",
@@ -969,7 +969,7 @@ dependencies = [
 name = "invitations"
 version = "0.0.1"
 dependencies = [
- "hc_rzome_invitations",
+ "hc_coordinator_zome_invitations",
  "hdk",
  "invitations_integrity",
  "serde",
@@ -979,7 +979,7 @@ dependencies = [
 name = "invitations_integrity"
 version = "0.0.1"
 dependencies = [
- "hc_zome_invitations",
+ "hc_integrity_zome_invitations",
  "hdi",
  "serde",
 ]
