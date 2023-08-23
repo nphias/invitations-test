@@ -5,7 +5,6 @@ export type InvitationEntryInfo = {
   inviter: AgentPubKey
   invitees: AgentPubKey[],
   timestamp: number,
-  invitation_entry_hash: EntryHash,
   invitation_creation_hash: ActionHash,
   invitees_who_accepted: AgentPubKey[],
   invitees_who_rejected: AgentPubKey[]

@@ -241,7 +241,7 @@ test('4. create, reject and clear Invite', async () => {
     console.log(reject)
     
     console.log("Bob clears the invitation")
-    const result: boolean = await clearInvite(bob.cells[0], bob_signal.payload['data'].invitation_entry_hash)
+    const result: boolean = await clearInvite(bob.cells[0], bob_signal.payload['data'].invitation_creation_hash)
     console.log(result)
 
     console.log("Bob checks that he has deleted the invitation from his list")
