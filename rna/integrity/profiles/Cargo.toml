@@ -10,5 +10,3 @@ name = "profiles_integrity"
 [dependencies]
 hc_zome_profiles_integrity = "0.2"
 hdi = { workspace = true }
-
-serde = { workspace = true }

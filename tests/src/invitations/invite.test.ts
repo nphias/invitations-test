@@ -1,10 +1,8 @@
 import { assert, test } from "vitest";
 
-import { runScenario, pause, CallableCell, dhtSync, runLocalServices, createConductor, enableAndGetAgentApp, stopLocalServices, cleanAllConductors } from '@holochain/tryorama';
-import { NewEntryAction, ActionHash, Record, AppBundleSource, fakeDnaHash, fakeActionHash, fakeAgentPubKey, fakeEntryHash, AppSignalCb, AppSignal, RecordEntry, AppWebsocket } from '@holochain/client';
-import { decode } from '@msgpack/msgpack';
-
-import { acceptInvite, clearInvite, getPendingInvites, getSampleInviteInput, getSampleInviteInputUpdate, InviteInfo, rejectInvite, sendInvitations, updateInvitation } from './common.js';
+import { runScenario, dhtSync } from '@holochain/tryorama';
+import { AppSignalCb, AppSignal, encodeHashToBase64 } from '@holochain/client';
+import { acceptInvite, clearInvite, getAllInvites, getPendingInvites, getSampleInviteInput, getSampleInviteInputUpdate, InviteInfo, rejectInvite, sendInvitations, updateInvitation } from './common.js';
 
 const path_to_happ = '/../workdir/happ/invitations-test.happ'
 
@@ -25,15 +23,15 @@ test('1. create and compare invitation lists', async () => {
     // Shortcut peer discovery through gossip and register all agents in every
     // conductor of the scenario.
     await scenario.shareAllAgents();
-    console.log("\n************************* START TEST ****************************\n")
+    console.log("\n************************* START TEST 1 ****************************\n")
 
     console.log("\nAlice creates an Invite")
-    const invite_detail: InviteInfo = await sendInvitations(alice.cells[0], getSampleInviteInput([bob.agentPubKey]));
+    const invite_detail: InviteInfo = await sendInvitations(alice.cells[0], getSampleInviteInput([bob.agentPubKey,alice.agentPubKey]));
     //console.log(invite_detail)//decode((record.entry as any).Present.entry as any))
     assert.ok(invite_detail);
 
     // Wait for the created entry to be propagated to the other node.
-    await pause(1200);
+    await dhtSync([alice, bob], bob.cells[0].cell_id[0]);
 
     console.log("Bob gets his pending invites")
     const invite_list_bob: InviteInfo[] = await getPendingInvites(bob.cells[0])
@@ -48,7 +46,39 @@ test('1. create and compare invitation lists', async () => {
   });
 });
 
-test('2. create and accept Invite', async () => {
+test('2. create and get invites where you are not an invitee - but have the inviter link,', async () => {
+  await runScenario(async scenario => {
+    // Construct proper paths for your app.
+    // This assumes app bundle created by the `hc app pack` command.
+    const testAppPath = process.cwd() + path_to_happ;
+
+    // Set up the app to be installed 
+    const appSource_alice = { appBundleSource: { path: testAppPath }}
+    const appSource_bob = { appBundleSource: { path: testAppPath }}
+
+     // Add 2 players with the test app to the Scenario. The returned players
+    // can be destructured.
+    const [alice,bob] = await scenario.addPlayersWithApps([appSource_alice,appSource_bob]);
+
+    // Shortcut peer discovery through gossip and register all agents in every
+    // conductor of the scenario.
+    await scenario.shareAllAgents();
+    console.log("\n************************* START TEST 2 ****************************\n")
+
+    console.log("\nAlice creates an Invite")
+    const invite_detail: InviteInfo = await sendInvitations(alice.cells[0], getSampleInviteInput([bob.agentPubKey]));
+    //console.log(invite_detail)//decode((record.entry as any).Present.entry as any))
+    assert.ok(invite_detail);
+
+    console.log("alice gets all invites")
+    const invite_list_alice: InviteInfo[] = await getAllInvites(alice.cells[0])
+    console.log(invite_list_alice)
+    assert.isNotEmpty(invite_list_alice)
+  
+  });
+});
+
+test('3. create and accept Invite', async () => {
   await runScenario(async scenario => {
 
     // setup signal receivers
@@ -85,9 +115,9 @@ test('2. create and accept Invite', async () => {
 
     await scenario.shareAllAgents();
 
-    console.log("\n************************* START TEST ****************************\n")
+    console.log("\n************************* START TEST 3 ****************************\n")
     console.log("\nAlice creates an Invite to Bob\n")
-    const invite_detail: InviteInfo = await sendInvitations(alice.cells[0],getSampleInviteInput([bob.agentPubKey]));
+    const invite_detail: InviteInfo = await sendInvitations(alice.cells[0],getSampleInviteInput([bob.agentPubKey,alice.agentPubKey]));
     assert.ok(invite_detail);
 
     await dhtSync([alice, bob], bob.cells[0].cell_id[0]);
@@ -97,9 +127,9 @@ test('2. create and accept Invite', async () => {
     assert.equal(bob_signal.payload['type'], 'InvitationReceived')
 
     console.log("\nBob accepts the invite\n")  //this would be better to get back the action hash from the createlink
-    const result: boolean = await acceptInvite(bob.cells[0],bob_signal.payload['data'].invitation_original_hash)
-    console.log(result)
-    assert.isTrue(result)
+    const result = await acceptInvite(bob.cells[0],bob_signal.payload['data'].creation_hash)
+    console.log("Accept link hash: ", result)
+    assert.isDefined(result)
 
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
     let alice_signal = await signalReceived_alice
@@ -115,7 +145,7 @@ test('2. create and accept Invite', async () => {
   });
 });
 
-test('3. create and update Invite', async () => {
+test('4. create and update Invite', async () => {
   await runScenario(async scenario => {
    
     // setup signal receivers
@@ -152,10 +182,10 @@ test('3. create and update Invite', async () => {
 
     await scenario.shareAllAgents();
 
-    console.log("\n************************* START TEST ****************************\n")
+    console.log("\n************************* START TEST 4 ****************************\n")
 
     console.log("\nAlice creates an Invite to Bob\n")
-    const invite_detail: InviteInfo = await sendInvitations(alice.cells[0],getSampleInviteInput([bob.agentPubKey]));
+    const invite_detail: InviteInfo = await sendInvitations(alice.cells[0],getSampleInviteInput([bob.agentPubKey,alice.agentPubKey]));
     assert.ok(invite_detail);
 
     await dhtSync([alice, bob], bob.cells[0].cell_id[0]);
@@ -165,8 +195,8 @@ test('3. create and update Invite', async () => {
     assert.equal(bob_signal.payload['type'], 'InvitationReceived')
 
     console.log("\nBob accepts the invitation\n")
-    const accept: boolean = await acceptInvite(bob.cells[0],bob_signal.payload['data'].invitation_original_hash)
-    console.log(accept)
+    const accept = await acceptInvite(bob.cells[0],bob_signal.payload['data'].creation_hash)
+    console.log("Accept link hash: ", accept)
     
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
     let alice_signal = await signalReceived_alice
@@ -176,9 +206,9 @@ test('3. create and update Invite', async () => {
     assert.deepEqual(invitees[0], bob.agentPubKey, "Bob was not found in the accepted invitees")
 
     console.log("Alice sees Bob has accepted the invite via a signal and decides to update the invite location and start_time\n")
-    let inviteUpdate = getSampleInviteInputUpdate([bob.agentPubKey], alice_signal.payload['data'].invitation_original_hash)
-    const invite_list_alice: InviteInfo = await updateInvitation(alice.cells[0],inviteUpdate)
-    console.log(invite_list_alice)
+    let inviteUpdate = getSampleInviteInputUpdate([bob.agentPubKey,alice.agentPubKey], alice_signal.payload['data'].creation_hash)
+    const invite_detail_update: InviteInfo = await updateInvitation(alice.cells[0],inviteUpdate)
+    console.log(invite_detail_update)
     
     await dhtSync([alice, bob], bob.cells[0].cell_id[0]);
     let bob_signal2 = await signalReceived_bob
@@ -187,11 +217,13 @@ test('3. create and update Invite', async () => {
     console.log("Bob sees he has been signalled an updated Invite:\n",bob_signal2.payload['data'])
     console.log(bob_signal2.payload['type'])
     assert.equal(bob_signal2.payload['type'], 'InvitationUpdated')
+    assert.notDeepEqual(invite_detail, invite_detail_update, "update failed")
+    assert.equal(invite_detail_update.invitation.location, "Amsterdam", "location update failed")
   });
 });
 
 
-test('4. create and reject Invite', async () => {
+test('5. create and reject Invite', async () => {
   await runScenario(async scenario => {
    
     // setup signal receivers
@@ -229,10 +261,10 @@ test('4. create and reject Invite', async () => {
     // conductor of the scenario.
     await scenario.shareAllAgents();
 
-    console.log("\n************************* START TEST ****************************\n")
+    console.log("\n************************* START TEST 5 ****************************\n")
 
     console.log("\nAlice creates an Invite to Bob\n")
-    const invite_detail: InviteInfo = await sendInvitations(alice.cells[0],getSampleInviteInput([bob.agentPubKey]));
+    const invite_detail: InviteInfo = await sendInvitations(alice.cells[0],getSampleInviteInput([bob.agentPubKey,alice.agentPubKey]));
     assert.ok(invite_detail);
 
     await dhtSync([alice, bob], bob.cells[0].cell_id[0]);
@@ -242,8 +274,8 @@ test('4. create and reject Invite', async () => {
     assert.equal(bob_signal.payload['type'], 'InvitationReceived')
 
     console.log("\nBob rejects the invitation\n")
-    const reject: boolean = await rejectInvite(bob.cells[0],bob_signal.payload['data'].invitation_original_hash)
-    console.log(reject)
+    const reject = await rejectInvite(bob.cells[0],bob_signal.payload['data'].creation_hash)
+    console.log("reject hash:",reject)
     
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
     let alice_signal = await signalReceived_alice
@@ -260,7 +292,7 @@ test('4. create and reject Invite', async () => {
 });
 
 
-test('5. create, reject and clear Invite', async () => {
+test('6. create, reject and clear Invite', async () => {
   await runScenario(async scenario => {
         
     // setup signal receivers
@@ -298,7 +330,7 @@ test('5. create, reject and clear Invite', async () => {
     // conductor of the scenario.
     await scenario.shareAllAgents();
 
-    console.log("\n************************* START TEST ****************************\n")
+    console.log("\n************************* START TEST 6 ****************************\n")
 
     console.log("\nAlice creates an Invite to Bob\n")
     const invite_detail: InviteInfo = await sendInvitations(alice.cells[0],getSampleInviteInput([bob.agentPubKey]));
@@ -311,15 +343,15 @@ test('5. create, reject and clear Invite', async () => {
     assert.equal(bob_signal.payload['type'], 'InvitationReceived')
 
     console.log("\nBob rejects the invitation\n")
-    const reject: boolean = await rejectInvite(bob.cells[0],bob_signal.payload['data'].invitation_original_hash)
-    console.log(reject)
+    const reject = await rejectInvite(bob.cells[0],bob_signal.payload['data'].creation_hash)
+    console.log("reject hash:",encodeHashToBase64(reject))
     
     console.log("Bob clears the invitation")
-    const result: boolean = await clearInvite(bob.cells[0], bob_signal.payload['data'].invitation_original_hash)
+    const result = await clearInvite(bob.cells[0], bob_signal.payload['data'].creation_hash)
     console.log(result)
 
     console.log("Bob checks that he has deleted the invitation from his list by seeing he has no invitations")
-    const invite_list_bob  = await getPendingInvites(bob.cells[0])
+    const invite_list_bob  = await getAllInvites(bob.cells[0])
     console.log(invite_list_bob)
     assert.isNull(invite_list_bob)
   });

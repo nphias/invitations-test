@@ -1,5 +1,5 @@
 import { CallableCell } from '@holochain/tryorama';
-import { NewEntryAction, ActionHash, Record, AppBundleSource, fakeActionHash, fakeAgentPubKey, fakeEntryHash, fakeDnaHash, AgentPubKey, EntryHash, Action, Timestamp } from '@holochain/client';
+import { ActionHash, AgentPubKey, Timestamp } from '@holochain/client';
 
 export type Invite = {
   inviter: AgentPubKey,
@@ -7,14 +7,19 @@ export type Invite = {
   location?: string,
   start_time?: Timestamp,
   end_time?: Timestamp,
+  details?: Record<string, string>;
   timestamp: Timestamp
 }
 
 export type InviteInfo = {
   invitation: Invite,
-  invitation_creation_hash: ActionHash,
+  creation_hash: ActionHash,
+  author: AgentPubKey
+  timestamp: Timestamp
   invitees_who_accepted: AgentPubKey[],
-  invitees_who_rejected: AgentPubKey[]
+  invitees_who_rejected: AgentPubKey[],
+  invitees_pending: AgentPubKey[]
+
 }
 
 export type InviteInput = {
@@ -22,21 +27,22 @@ export type InviteInput = {
   location?: string,
   start_time?: Timestamp,
   end_time?: Timestamp,
-  original_hash?: ActionHash
+  details?: Record<string, string>;
+  creation_hash?: ActionHash
 }
 
 export function getSampleInviteInput(inviteesInput: AgentPubKey[]): InviteInput {
-  return { invitees: inviteesInput, location: "london" }
+  return { invitees: inviteesInput, location: "London" }
 } 
 
-export function getSampleInviteInputUpdate(inviteesInput: AgentPubKey[], original_hash:ActionHash): InviteInput {
-  return { invitees: inviteesInput, location: "Amsterdam", start_time: Date.now(), end_time: Date.now()+86400, original_hash: original_hash}
+export function getSampleInviteInputUpdate(inviteesInput: AgentPubKey[], first_hash:ActionHash): InviteInput {
+  return { invitees: inviteesInput, location: "Amsterdam", start_time: Date.now(), end_time: Date.now()+86400, creation_hash: first_hash}
 } 
 
 export async function sendInvitations(cell: CallableCell, invitation:InviteInput): Promise<InviteInfo> {
   return cell.callZome({
     zome_name: "invitations",
-    fn_name: "send_invitations",
+    fn_name: "create_invitation",
     payload: invitation,
   });
 }
@@ -57,7 +63,15 @@ export async function getPendingInvites(cell: CallableCell): Promise<InviteInfo[
   });
 }
 
-export async function acceptInvite(cell: CallableCell, creationHash:ActionHash): Promise<boolean> {
+export async function getAllInvites(cell: CallableCell): Promise<InviteInfo[]> {
+  return cell.callZome({
+    zome_name: "invitations",
+    fn_name: "get_all_my_invitations",
+    payload: null
+  });
+}
+
+export async function acceptInvite(cell: CallableCell, creationHash:ActionHash): Promise<ActionHash> {
   return cell.callZome({
     zome_name: "invitations",
     fn_name: "accept_invitation",
@@ -65,7 +79,7 @@ export async function acceptInvite(cell: CallableCell, creationHash:ActionHash):
   });
 }
 
-export async function rejectInvite(cell:CallableCell, creationHash: ActionHash): Promise<boolean> {
+export async function rejectInvite(cell:CallableCell, creationHash: ActionHash): Promise<ActionHash> {
   return cell.callZome({
     zome_name: "invitations",
     fn_name: "reject_invitation",
@@ -73,7 +87,7 @@ export async function rejectInvite(cell:CallableCell, creationHash: ActionHash):
   });
 }
 
-export async function clearInvite(cell:CallableCell, creationHash: ActionHash): Promise<boolean> {
+export async function clearInvite(cell:CallableCell, creationHash: ActionHash): Promise<void> {
   return cell.callZome({
     zome_name: "invitations",
     fn_name: "clear_invitation",
